@@ -1,32 +1,36 @@
 import { Container } from "../../ui";
 
+const navItems = [
+    { label: 'About', href: '#about' },
+    { label: 'Skills', href: '#skills' },
+    { label: 'Experience', href: '#experience' },
+    { label: 'Projects', href: '#projects' },
+    { label: 'Contact', href: '#contact' },
+];
+
 export const Navbar = () => {
     return (
         <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
             <Container>
                 <div className="flex h-20 items-center justify-between">
-                    <a 
-                        href="/"
-                        className="text-xl font-bold tracking-tight gap-8 md:flex"
-                    >
-                        Cristhian
-                    </a>
-                </div>
+                    <a href="/" className="text-xl font-bold tracking-tight">KalTechGroup</a>
 
-                <nav>
-                    <ul className="hidden items-center gap-8 md:flex">
-                        <li>
-                            <a href="#" className="text-sm font-medium text-text-secondary transition-colors hover:text-primary">About</a>
-                        </li>
-                        <li>
-                            <a href="" className="text-sm font-medium text-text-secondary transition-colors hover:text-primary">Projects</a>
-                        </li>
-                        <li>
-                            <a href="" className="text-sm font-medium text-text-secondary transition-colors hover:text-primary">Contact</a>
-                        </li>
-                    </ul>
-                </nav>
+                    <nav aria-label="Main navigation">
+                        <ul className="hidden items-center gap-8 md:flex">
+                            {navItems.map((item) => (
+                                <li key={item.href}>
+                                    <a 
+                                        href={item.href}
+                                        className="text-sm font-medium text-text-secondary transition-colors hover:text-primary"
+                                    >
+                                        {item.label}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+                </div>
             </Container>
         </header>
-    )
-}
+    );
+};
