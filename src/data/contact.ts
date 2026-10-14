@@ -12,6 +12,8 @@ export const contact = {
 
     availability: 'Open to new opportunities',
 
+    resumeUrl: '/cv.pdf',
+
     socialLinks: [
         {
             id: 'github',
