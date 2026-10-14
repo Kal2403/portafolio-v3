@@ -4,7 +4,18 @@ import {
     useRef,
     useState,
 } from 'react';
-import { CheckCircle2, LoaderCircle, Send } from 'lucide-react';
+import {
+    AlertCircle,
+    CheckCircle2,
+    LoaderCircle,
+    Mail,
+    RotateCcw,
+    Send,
+} from 'lucide-react';
+import {
+    buildContactMailtoUrl,
+    sendContactMessage,
+} from '../../../../services';
 
 type ContactFormContent = {
     nameLabel: string;
@@ -27,15 +38,22 @@ type FormValues = {
     email: string;
     subject: string;
     message: string;
+    botcheck: string;
 };
 
 type FormErrors = Partial<Record<keyof FormValues, string>>;
+
+type SubmitFeedback = {
+    type: 'success' | 'error';
+    message: string;
+};
 
 const initialValues: FormValues = {
     name: '',
     email: '',
     subject: '',
     message: '',
+    botcheck: '',
 };
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -45,6 +63,7 @@ export const ContactForm = ({ content }: ContactFormProps) => {
     const [errors, setErrors] = useState<FormErrors>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [feedback, setFeedback] = useState<SubmitFeedback | null>(null);
 
     const isSubmissionLocked = useRef(false);
 
@@ -91,7 +110,9 @@ export const ContactForm = ({ content }: ContactFormProps) => {
             [fieldName]: undefined,
         }));
 
-        setIsSubmitted(false);
+        if (feedback?.type === 'error') {
+            setFeedback(null);
+        }
     };
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -110,21 +131,74 @@ export const ContactForm = ({ content }: ContactFormProps) => {
 
         isSubmissionLocked.current = true;
         setIsSubmitting(true);
-        setIsSubmitted(false);
+        setFeedback(null);
 
         try {
-            await new Promise((resolve) => {
-                window.setTimeout(resolve, 800);
+            const result = await sendContactMessage({
+                name: values.name,
+                email: values.email,
+                subject: values.subject,
+                message: values.message,
+                botcheck: values.botcheck,
             });
 
-            setValues(initialValues);
-            setErrors({});
-            setIsSubmitted(true);
+            if (result.success) {
+                setValues(initialValues);
+                setErrors({});
+                setIsSubmitted(true);
+                setFeedback({
+                    type: 'success',
+                    message: result.message,
+                });
+            } else {
+                setFeedback({
+                    type: 'error',
+                    message: result.message,
+                });
+            }
         } finally {
             isSubmissionLocked.current = false;
             setIsSubmitting(false);
         }
     };
+
+    const handleReset = () => {
+        setIsSubmitted(false);
+        setFeedback(null);
+        setValues(initialValues);
+        setErrors({});
+    };
+
+    const mailtoFallbackUrl = buildContactMailtoUrl(values);
+
+    if (isSubmitted && feedback?.type === 'success') {
+        return (
+            <div className="rounded-3xl border border-border bg-background p-8 text-center sm:p-12">
+                <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-green-500/10 text-green-600 dark:text-green-400">
+                    <CheckCircle2 className="size-8" aria-hidden="true" />
+                </div>
+
+                <h3 className="mt-6 text-2xl font-bold text-text-primary">
+                    Message Sent Successfully!
+                </h3>
+
+                <p className="mx-auto mt-3 max-w-md text-text-secondary">
+                    {feedback.message}
+                </p>
+
+                <div className="mt-8">
+                    <button
+                        type="button"
+                        onClick={handleReset}
+                        className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-semibold text-white transition-opacity hover:opacity-90"
+                    >
+                        <RotateCcw className="size-4" aria-hidden="true" />
+                        Send another message
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <form
@@ -132,6 +206,19 @@ export const ContactForm = ({ content }: ContactFormProps) => {
             noValidate
             className="rounded-3xl border border-border bg-background p-6 sm:p-8"
         >
+            {/* Honeypot field for anti-spam */}
+            <input
+                type="text"
+                name="botcheck"
+                value={values.botcheck}
+                onChange={handleChange}
+                tabIndex={-1}
+                autoComplete="off"
+                className="hidden"
+                aria-hidden="true"
+                style={{ display: 'none' }}
+            />
+
             <div>
                 <h3 className="text-2xl font-semibold text-text-primary">
                     Send a message
@@ -141,6 +228,28 @@ export const ContactForm = ({ content }: ContactFormProps) => {
                     Share a few details about your project, opportunity or collaboration.
                 </p>
             </div>
+
+            {feedback?.type === 'error' && (
+                <div
+                    role="alert"
+                    className="mt-6 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-red-600 dark:text-red-400"
+                >
+                    <div className="flex items-start gap-3">
+                        <AlertCircle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+                        <div className="space-y-2 text-sm leading-6">
+                            <p className="font-semibold">Unable to send message</p>
+                            <p>{feedback.message}</p>
+                            <a
+                                href={mailtoFallbackUrl}
+                                className="inline-flex items-center gap-1.5 font-semibold text-primary underline underline-offset-4 hover:opacity-80"
+                            >
+                                <Mail className="size-4" aria-hidden="true" />
+                                Send directly via your email client
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="mt-8 grid gap-6 sm:grid-cols-2">
                 <div>
@@ -155,19 +264,20 @@ export const ContactForm = ({ content }: ContactFormProps) => {
                         id="contact-name"
                         name="name"
                         type="text"
+                        disabled={isSubmitting}
                         value={values.name}
                         onChange={handleChange}
                         placeholder={content.namePlaceholder}
                         autoComplete="name"
                         aria-invalid={Boolean(errors.name)}
                         aria-describedby={errors.name ? 'contact-name-error' : undefined}
-                        className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-primary"
+                        className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-primary disabled:opacity-60"
                     />
 
                     {errors.name && (
                         <p
                             id="contact-name-error"
-                            className="mt-2 text-sm text-red-600"
+                            className="mt-2 text-sm text-red-600 dark:text-red-400"
                         >
                             {errors.name}
                         </p>
@@ -186,19 +296,20 @@ export const ContactForm = ({ content }: ContactFormProps) => {
                         id="contact-email"
                         name="email"
                         type="email"
+                        disabled={isSubmitting}
                         value={values.email}
                         onChange={handleChange}
                         placeholder={content.emailPlaceholder}
                         autoComplete="email"
                         aria-invalid={Boolean(errors.email)}
                         aria-describedby={errors.email ? 'contact-email-error' : undefined}
-                        className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-primary"
+                        className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-primary disabled:opacity-60"
                     />
 
                     {errors.email && (
                         <p
                             id="contact-email-error"
-                            className="mt-2 text-sm text-red-600"
+                            className="mt-2 text-sm text-red-600 dark:text-red-400"
                         >
                             {errors.email}
                         </p>
@@ -218,6 +329,7 @@ export const ContactForm = ({ content }: ContactFormProps) => {
                     id="contact-subject"
                     name="subject"
                     type="text"
+                    disabled={isSubmitting}
                     value={values.subject}
                     onChange={handleChange}
                     placeholder={content.subjectPlaceholder}
@@ -225,13 +337,13 @@ export const ContactForm = ({ content }: ContactFormProps) => {
                     aria-describedby={
                         errors.subject ? 'contact-subject-error' : undefined
                     }
-                    className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-primary"
+                    className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-primary disabled:opacity-60"
                 />
 
                 {errors.subject && (
                     <p
                         id="contact-subject-error"
-                        className="mt-2 text-sm text-red-600"
+                        className="mt-2 text-sm text-red-600 dark:text-red-400"
                     >
                         {errors.subject}
                     </p>
@@ -250,6 +362,7 @@ export const ContactForm = ({ content }: ContactFormProps) => {
                     id="contact-message"
                     name="message"
                     rows={6}
+                    disabled={isSubmitting}
                     value={values.message}
                     onChange={handleChange}
                     placeholder={content.messagePlaceholder}
@@ -257,13 +370,13 @@ export const ContactForm = ({ content }: ContactFormProps) => {
                     aria-describedby={
                         errors.message ? 'contact-message-error' : undefined
                     }
-                    className="mt-2 w-full resize-y rounded-xl border border-border bg-surface px-4 py-3 text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-primary"
+                    className="mt-2 w-full resize-y rounded-xl border border-border bg-surface px-4 py-3 text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-primary disabled:opacity-60"
                 />
 
                 {errors.message && (
                     <p
                         id="contact-message-error"
-                        className="mt-2 text-sm text-red-600"
+                        className="mt-2 text-sm text-red-600 dark:text-red-400"
                     >
                         {errors.message}
                     </p>
@@ -283,7 +396,7 @@ export const ContactForm = ({ content }: ContactFormProps) => {
                                 aria-hidden="true"
                                 className="size-5 animate-spin"
                             />
-                            Sending...
+                            Sending message...
                         </>
                     ) : (
                         <>
@@ -292,22 +405,6 @@ export const ContactForm = ({ content }: ContactFormProps) => {
                         </>
                     )}
                 </button>
-
-                {isSubmitted && (
-                    <p
-                        role="status"
-                        className="inline-flex items-start gap-2 text-sm font-medium text-green-700"
-                    >
-                        <CheckCircle2
-                            aria-hidden="true"
-                            className="mt-0.5 size-5 shrink-0"
-                        />
-
-                        <span>
-                            Form validated successfully. Email delivery is not configured yet.
-                        </span>
-                    </p>
-                )}
             </div>
         </form>
     );
