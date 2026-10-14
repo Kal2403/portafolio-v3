@@ -1,4 +1,4 @@
-import { Container } from "../../ui";
+import { Container, ThemeToggle } from "../../ui";
 
 const navItems = [
     { label: 'About', href: '#about' },
@@ -15,20 +15,24 @@ export const Navbar = () => {
                 <div className="flex h-20 items-center justify-between">
                     <a href="/" className="text-xl font-bold tracking-tight">KalTechGroup</a>
 
-                    <nav aria-label="Main navigation">
-                        <ul className="hidden items-center gap-8 md:flex">
-                            {navItems.map((item) => (
-                                <li key={item.href}>
-                                    <a 
-                                        href={item.href}
-                                        className="text-sm font-medium text-text-secondary transition-colors hover:text-primary"
-                                    >
-                                        {item.label}
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
-                    </nav>
+                    <div className="flex items-center gap-6">
+                        <nav aria-label="Main navigation">
+                            <ul className="hidden items-center gap-8 md:flex">
+                                {navItems.map((item) => (
+                                    <li key={item.href}>
+                                        <a 
+                                            href={item.href}
+                                            className="text-sm font-medium text-text-secondary transition-colors hover:text-primary"
+                                        >
+                                            {item.label}
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </nav>
+
+                        <ThemeToggle />
+                    </div>
                 </div>
             </Container>
         </header>
