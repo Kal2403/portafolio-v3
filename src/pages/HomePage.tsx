@@ -11,15 +11,10 @@ export const HomePage = () => {
     return (
         <>
             <Hero />
-
             <About />
-
             <Skills />
-
             <Experience />
-
             <Projects />
-
             <Contact />
         </>
     );

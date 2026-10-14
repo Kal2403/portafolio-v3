@@ -10,7 +10,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 const variants: Record<ButtonVariant, string> = {
     primary: 'bg-primary text-white hover:bg-primary-hover',
     secondary: 'bg-surface text-text-primary hover:bg-border',
-    outline: 'border border-border bg-transparent text-text-primary hover: bg-surface',
+    outline: 'border border-border bg-transparent text-text-primary hover:bg-surface',
 };
 
 export const Button = ({
