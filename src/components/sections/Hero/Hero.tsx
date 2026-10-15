@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react';
 import { FaGithub, FaLinkedin } from 'react-icons/fa';
 import { contact } from '../../../data/contact';
-import { Button, Container } from '../../ui';
+import { Button, Container, FadeIn } from '../../ui';
 
 export const Hero = () => {
     const githubLink =
@@ -15,7 +15,7 @@ export const Hero = () => {
         <section className="relative overflow-hidden py-24 sm:py-32 lg:py-40">
             <Container>
                 <div className="grid items-center gap-16 lg:grid-cols-[1.1fr_0.9fr]">
-                    <div>
+                    <FadeIn direction="up" duration={0.6}>
                         <p className="mt-5 text-sm font-semibold uppercase tracking-[0.25em] text-primary">
                             Portfolio V3
                         </p>
@@ -56,8 +56,9 @@ export const Hero = () => {
                                 <FaLinkedin className="size-5" />
                             </a>
                         </div>
-                    </div>
-                    <div className="relative hidden lg:block">
+                    </FadeIn>
+
+                    <FadeIn direction="left" delay={0.2} duration={0.6} className="relative hidden lg:block">
                         <div className="absolute -inset-4 rounded-4xl bg-primary/10 blur-2xl" />
                         <div className="relative rounded-4xl border border-border bg-surface p-8 shadow-sm">
                             <div className="mb-6 flex gap-2">
@@ -75,7 +76,7 @@ export const Hero = () => {
                                 <p>&#125;;</p>
                             </div>
                         </div>
-                    </div>
+                    </FadeIn>
                 </div>
             </Container>
         </section>
